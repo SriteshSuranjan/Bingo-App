@@ -20,6 +20,11 @@
       "static/chunks/main.js",
       "static/chunks/pages/index.js"
     ],
+    "/[room]": [
+      "static/chunks/webpack.js",
+      "static/chunks/main.js",
+      "static/chunks/pages/[room].js"
+    ],
     "/_app": [
       "static/chunks/webpack.js",
       "static/chunks/main.js",

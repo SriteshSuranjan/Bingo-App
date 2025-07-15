@@ -61,7 +61,7 @@ pipeline {
                     rm -rf dependency-check dependency-check-report
                     mkdir -p dependency-check dependency-check-report
 
-                    curl -L -o dc.zip https://github.com/jeremylong/DependencyCheck/releases/download/v8.4.0/dependency-check-8.4.0-release.zip
+                    curl -L -o dc.zip https://github.com/jeremylong/DependencyCheck/releases/download/v12.1.0/dependency-check-12.1.0-release.zip
                     unzip -q dc.zip -d ./dependency-check
 
                     ./dependency-check/dependency-check/bin/dependency-check.sh \
