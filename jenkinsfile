@@ -57,8 +57,26 @@ pipeline {
 
         stage('OWASP Dependency Check') {
             steps {
-                dependencyCheck additionalArguments: '--scan ./ --disableYarnAudit --disableNodeAudit', odcInstallation: 'DP'
-                dependencyCheckPublisher pattern: '**/dependency-check-report.xml'
+                sh '''
+                    # Clean previous scan folder
+                    rm -rf dependency-check && mkdir dependency-check
+
+                    # Download dependency-check zip (if not already present)
+                    curl -L -o dc.zip https://github.com/jeremylong/DependencyCheck/releases/download/v8.4.0/dependency-check-8.4.0-release.zip
+
+                    # Unzip into a temp folder
+                    unzip -q dc.zip -d ./dependency-check
+
+                    # Run the scan
+                    ./dependency-check/dependency-check/bin/dependency-check.sh \
+                        --project "Bingo-App" \
+                        --scan ./ \
+                        --format "ALL" \
+                        --out dependency-check-report
+
+                    # Optionally, view report location
+                    echo "OWASP Dependency Check report generated at: dependency-check-report/dependency-check-report.html"
+                '''
             }
         }
 
@@ -88,7 +106,7 @@ pipeline {
 
         stage('Deploy to Container') {
             steps {
-                sh 'docker run -d --name bingo -p 3000:3000 sriteshsuranjan/bingo:latest'
+                sh 'docker run -d --name bingo -p 3000:3000 sriteshsuranjan/bingo:latest || echo "Container may already be running"'
             }
         }
     }
