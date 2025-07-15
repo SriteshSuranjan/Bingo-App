@@ -19,7 +19,7 @@ pipeline {
 
         stage('Checkout from Git') {
             steps {
-                git branch: 'main', url: 'https://github.com/Ayush-Singh986/bingo1.git'
+                git branch: 'main', url: 'https://github.com/SriteshSuranjan/Bingo-App.git'
             }
         }
 
