@@ -68,7 +68,7 @@ pipeline {
                         --project "Bingo-App" \
                         --scan ./ \
                         --format "ALL" \
-                        --out ./dependency-check-report
+                        --out ./dependency-check-report \
 			--disableAssembly
                 '''
             }
