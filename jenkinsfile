@@ -3,7 +3,7 @@ pipeline {
 
     tools {
         jdk 'jdk-17'          // JDK tool configured in Jenkins
-        nodejs 'Node16'       // NodeJS tool configured in Jenkins
+        nodejs 'Node18'       // NodeJS tool configured in Jenkins
     }
 
     environment {
