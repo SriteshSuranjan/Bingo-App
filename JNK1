@@ -30,7 +30,7 @@ pipeline {
                         $SCANNER_HOME/bin/sonar-scanner \
                         -Dsonar.projectName=Bingo \
                         -Dsonar.projectKey=Bingo \
-                        -Dsonar.login=$SONAR_AUTH_TOKEN
+                        -Dsonar.login=${SONAR_TOKEN}
                     '''
                 }
             }
@@ -88,3 +88,4 @@ pipeline {
         }
     }
 }
+
