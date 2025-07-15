@@ -20,7 +20,7 @@ pipeline {
 
     stage('Checkout from Git') {
       steps {
-        git credentialsId: 'your-credentials-id', url: 'https://github.com/Sritesh-Suranjan/Bingo-App.git', branch: 'main'
+        git 'https://github.com/Sritesh-Suranjan/Bingo-App.git'
       }
     }
 
