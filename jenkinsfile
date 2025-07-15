@@ -84,7 +84,12 @@ pipeline {
 
         stage('Trivy FS Scan') {
             steps {
-                sh 'trivy fs . > trivyfs.txt'
+                sh '''
+		   echo "Installing Trivy..."
+		   curl -sfL https://raw.githubusercontent.com/aquasecurity/trivy/main/contrib/install.sh | sh -s -- -b /usr/local/bin
+                   echo "Running Trivy FS scan..."
+		   trivy fs . > trivyfs.txt
+		'''
             }
         }
 
@@ -102,7 +107,12 @@ pipeline {
 
         stage('Trivy Image Scan') {
             steps {
-                sh 'trivy image sriteshsuranjan/bingo:latest > trivyimage.txt'
+                sh '''
+		   echo "Installing Trivy..."
+                   curl -sfL https://raw.githubusercontent.com/aquasecurity/trivy/main/contrib/install.sh | sh -s -- -b /usr/local/bin
+                   echo "Running Trivy Image scan..."
+		   trivy image sriteshsuranjan/bingo:latest > trivyimage.txt
+		'''
             }
         }
 
