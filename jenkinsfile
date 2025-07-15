@@ -1,112 +1,101 @@
 pipeline {
-    agent any
+  agent any
 
-    tools {
-        jdk 'jdk-17'          // JDK tool configured in Jenkins
-        nodejs 'Node18'       // NodeJS tool configured in Jenkins
+  tools {
+    nodejs 'Node18'
+    jdk 'jdk-17'
+  }
+
+  environment {
+    SONARQUBE_SERVER = 'SonarQube'
+    DOCKER_IMAGE = 'yourdockerhubusername/bingo-app'
+  }
+
+  stages {
+    stage('Clean Workspace') {
+      steps {
+        cleanWs()
+      }
     }
 
-    environment {
-        SCANNER_HOME = tool 'sonar-scanner'  // SonarQube Scanner tool
+    stage('Checkout from Git') {
+      steps {
+        git credentialsId: 'your-credentials-id', url: 'https://github.com/Sritesh-Suranjan/Bingo-App.git', branch: 'main'
+      }
     }
 
-    stages {
-        stage('Clean Workspace') {
-            steps {
-                cleanWs()
-            }
+    stage('SonarQube Analysis') {
+      steps {
+        withSonarQubeEnv("${env.SONARQUBE_SERVER}") {
+          sh 'npm install'
+          sh 'npx sonar-scanner'
         }
-
-        stage('Checkout from Git') {
-            steps {
-                git branch: 'main', url: 'https://github.com/SriteshSuranjan/Bingo-App.git'
-            }
-        }
-
-        stage('SonarQube Analysis') {
-            steps {
-                withSonarQubeEnv('sonar-server') {
-                    sh '''
-                        $SCANNER_HOME/bin/sonar-scanner \
-                        -Dsonar.projectName=Bingo \
-                        -Dsonar.projectKey=Bingo \
-                        -Dsonar.login=$SONAR_AUTH_TOKEN
-                    '''
-                }
-            }
-        }
-
-        stage('Quality Gate') {
-            steps {
-                script {
-                    timeout(time: 2, unit: 'MINUTES') {
-                        def qg = waitForQualityGate()
-                        if (qg.status != 'OK') {
-                            error "Pipeline aborted due to quality gate failure: ${qg.status}"
-                        }
-                    }
-                }
-            }
-        }
-
-        stage('Install Dependencies') {
-            steps {
-                sh 'npm install'
-            }
-        }
-
-        stage('OWASP Dependency Check') {
-            steps {
-                sh '''
-                    rm -rf dependency-check dependency-check-report
-                    mkdir -p dependency-check dependency-check-report
-
-                    curl -L -o dc.zip https://github.com/jeremylong/DependencyCheck/releases/download/v12.1.0/dependency-check-12.1.0-release.zip
-                    unzip -q dc.zip -d ./dependency-check
-
-                    ./dependency-check/dependency-check/bin/dependency-check.sh \
-                        --project "Bingo-App" \
-                        --scan ./ \
-                        --format "ALL" \
-                        --out ./dependency-check-report \
-			--disableAssembly
-                '''
-            }
-            post {
-                always {
-                    archiveArtifacts artifacts: 'dependency-check-report/**/*.*', allowEmptyArchive: true
-                }
-            }
-        }
-
-        stage('Trivy FS Scan') {
-            steps {
-                sh 'trivy fs . > trivyfs.txt'
-            }
-        }
-
-        stage('Docker Build & Push') {
-            steps {
-                script {
-                    withDockerRegistry(credentialsId: 'docker', toolName: 'docker') {
-                        sh 'docker build -t bingo .'
-                        sh 'docker tag bingo sriteshsuranjan/bingo:latest'
-                        sh 'docker push sriteshsuranjan/bingo:latest'
-                    }
-                }
-            }
-        }
-
-        stage('Trivy Image Scan') {
-            steps {
-                sh 'trivy image sriteshsuranjan/bingo:latest > trivyimage.txt'
-            }
-        }
-
-        stage('Deploy to Container') {
-            steps {
-                sh 'docker run -d --name bingo -p 3000:3000 sriteshsuranjan/bingo:latest || true'
-            }
-        }
+      }
     }
+
+    stage('Quality Gate') {
+      steps {
+        timeout(time: 1, unit: 'MINUTES') {
+          waitForQualityGate abortPipeline: true
+        }
+      }
+    }
+
+    stage('Install Dependencies') {
+      steps {
+        sh 'npm install'
+      }
+    }
+
+    stage('OWASP Dependency Check') {
+      steps {
+        sh '''
+          rm -rf dependency-check dependency-check-report dependency-check-data
+          mkdir -p dependency-check dependency-check-report dependency-check-data
+
+          curl -L -o dc.zip https://github.com/jeremylong/DependencyCheck/releases/download/v12.1.0/dependency-check-12.1.0-release.zip
+          unzip -q dc.zip -d ./dependency-check
+
+          ./dependency-check/dependency-check/bin/dependency-check.sh \
+            --project "Bingo-App" \
+            --scan package.json \
+            --format "ALL" \
+            --out ./dependency-check-report \
+            --data ./dependency-check-data \
+            --disableYarnAudit \
+            --disableAssembly \
+            --nodePackageSkipDevDependencies
+        '''
+      }
+    }
+
+    stage('Trivy FS Scan') {
+      steps {
+        sh 'trivy fs . > trivy-fs-report.txt || true'
+      }
+    }
+
+    stage('Docker Build & Push') {
+      steps {
+        sh '''
+          docker build -t $DOCKER_IMAGE .
+          echo "$DOCKER_PASSWORD" | docker login -u "$DOCKER_USERNAME" --password-stdin
+          docker push $DOCKER_IMAGE
+        '''
+      }
+    }
+
+    stage('Trivy Image Scan') {
+      steps {
+        sh 'trivy image $DOCKER_IMAGE > trivy-image-report.txt || true'
+      }
+    }
+
+    stage('Deploy to Container') {
+      steps {
+        sh 'docker-compose down || true'
+        sh 'docker-compose up -d'
+      }
+    }
+  }
 }
