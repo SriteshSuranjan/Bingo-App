@@ -57,7 +57,7 @@ pipeline {
 
         stage('OWASP Dependency Check') {
             steps {
-                dependencyCheck additionalArguments: '--scan ./ --disableYarnAudit --disableNodeAudit', odcInstallation: 'DP'
+                dependencyCheck additionalArguments: '--project Bingo --scan ./ --disableYarnAudit --disableNodeAudit', odcInstallation: 'DP'
                 dependencyCheckPublisher pattern: '**/dependency-check-report.xml'
             }
         }
