@@ -85,11 +85,18 @@ pipeline {
         stage('Trivy FS Scan') {
             steps {
                 sh '''
-		   echo "Installing Trivy..."
-		   curl -sfL https://raw.githubusercontent.com/aquasecurity/trivy/main/contrib/install.sh | sh -s -- -b /usr/local/bin
+                   echo "Installing Trivy locally..."
+                   mkdir -p ./trivy-bin
+                   curl -sfL https://raw.githubusercontent.com/aquasecurity/trivy/main/contrib/install.sh | sh -s -- -b ./trivy-bin
+
                    echo "Running Trivy FS scan..."
-		   trivy fs . > trivyfs.txt
-		'''
+                   ./trivy-bin/trivy fs . > trivyfs.txt || true
+                '''
+            }
+            post {
+                always {
+                    archiveArtifacts artifacts: 'trivyfs.txt', allowEmptyArchive: true
+                }
             }
         }
 
@@ -108,11 +115,18 @@ pipeline {
         stage('Trivy Image Scan') {
             steps {
                 sh '''
-		   echo "Installing Trivy..."
-                   curl -sfL https://raw.githubusercontent.com/aquasecurity/trivy/main/contrib/install.sh | sh -s -- -b /usr/local/bin
+                   echo "Installing Trivy locally..."
+                   mkdir -p ./trivy-bin
+                   curl -sfL https://raw.githubusercontent.com/aquasecurity/trivy/main/contrib/install.sh | sh -s -- -b ./trivy-bin
+
                    echo "Running Trivy Image scan..."
-		   trivy image sriteshsuranjan/bingo:latest > trivyimage.txt
-		'''
+                   ./trivy-bin/trivy image sriteshsuranjan/bingo:latest > trivyimage.txt || true
+                '''
+            }
+            post {
+                always {
+                    archiveArtifacts artifacts: 'trivyimage.txt', allowEmptyArchive: true
+                }
             }
         }
 
